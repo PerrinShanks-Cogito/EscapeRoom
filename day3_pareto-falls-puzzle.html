@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Falls Pareto Puzzle</title>
+<style>
+  :root{
+    --nhs-blue:#003087;
+    --nhs-mid:#005eb8;
+    --nhs-light:#41b6e6;
+    --nhs-green:#009639;
+    --nhs-amber:#ed8b00;
+    --nhs-red:#da291c;
+    --paper:#f4f7fb;
+    --card:#ffffff;
+    --ink:#1a2332;
+    --muted:#5b6b82;
+    --border:#dbe3ee;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background:linear-gradient(180deg,#eef3fa 0%, #f7fafd 400px, var(--paper) 100%);
+    color:var(--ink);
+    padding:32px 16px 80px;
+  }
+  .wrap{max-width:880px;margin:0 auto;}
+  .header{
+    background:linear-gradient(120deg, var(--nhs-blue), var(--nhs-mid));
+    color:#fff;
+    border-radius:16px;
+    padding:28px 32px;
+    box-shadow:0 8px 24px rgba(0,48,135,0.25);
+    position:relative;
+    overflow:hidden;
+  }
+  .header::after{
+    content:"";
+    position:absolute; right:-40px; top:-40px;
+    width:180px;height:180px;border-radius:50%;
+    background:rgba(255,255,255,0.08);
+  }
+  .header h1{margin:0 0 6px;font-size:1.7rem;}
+  .header p{margin:0;color:#dce8fb;font-size:0.98rem;}
+  .badge{
+    display:inline-block;background:rgba(255,255,255,0.18);
+    padding:4px 12px;border-radius:999px;font-size:0.78rem;
+    letter-spacing:0.04em;text-transform:uppercase;margin-bottom:10px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:24px 28px;
+    margin-top:20px;
+    box-shadow:0 2px 10px rgba(20,40,80,0.05);
+  }
+  .card h2{
+    margin-top:0;font-size:1.15rem;color:var(--nhs-blue);
+    display:flex;align-items:center;gap:8px;
+  }
+  .step-num{
+    background:var(--nhs-mid);color:#fff;border-radius:50%;
+    width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;
+    font-size:0.85rem;flex-shrink:0;
+  }
+  .links{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
+  .links a{
+    color:var(--nhs-blue); background:#eaf2fd; border:1px solid #cfe1f7;
+    padding:8px 14px;border-radius:8px;text-decoration:none;font-size:0.9rem;font-weight:600;
+  }
+  .links a:hover{background:#dceafd;}
+  .video-slot{
+    margin-top:10px;border:2px dashed #b9c9df;border-radius:10px;
+    padding:18px;text-align:center;color:var(--muted);font-size:0.9rem;background:#f7fafd;
+  }
+  table{width:100%;border-collapse:collapse;margin-top:14px;}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:0.94rem;}
+  th{color:var(--muted);font-weight:600;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.03em;}
+  tr:last-child td{border-bottom:none;font-weight:700;}
+  .num{text-align:right;font-variant-numeric:tabular-nums;}
+  input.calc{
+    width:78px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;
+    font-size:0.92rem;text-align:right;font-variant-numeric:tabular-nums;
+  }
+  input.calc.ok{border-color:var(--nhs-green);background:#eafaf0;}
+  input.calc.bad{border-color:var(--nhs-red);background:#fdecea;}
+  .vf-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+  .vf-row:last-child{border-bottom:none;}
+  .vf-row label{flex:1;font-size:0.94rem;}
+  .btn{
+    background:var(--nhs-mid);color:#fff;border:none;border-radius:8px;
+    padding:10px 20px;font-size:0.95rem;font-weight:600;cursor:pointer;
+    transition:background 0.15s;
+  }
+  .btn:hover{background:var(--nhs-blue);}
+  .btn.secondary{background:#eaf2fd;color:var(--nhs-blue);}
+  .btn.secondary:hover{background:#dceafd;}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px;}
+  .code-input{
+    padding:10px 14px;border:2px solid var(--border);border-radius:8px;
+    font-size:1.1rem;font-weight:700;letter-spacing:0.05em;width:140px;
+    text-align:center;
+  }
+  .msg{margin-top:12px;font-size:0.94rem;font-weight:600;min-height:1.2em;}
+  .msg.ok{color:var(--nhs-green);}
+  .msg.bad{color:var(--nhs-red);}
+  .hidden{display:none;}
+  .unlocked-banner{
+    background:linear-gradient(120deg,var(--nhs-green),#00b04f);
+    color:#fff;border-radius:12px;padding:20px 26px;margin-top:20px;
+    box-shadow:0 8px 20px rgba(0,150,57,0.25);
+  }
+  .unlocked-banner h2{margin:0 0 4px;color:#fff;}
+  .unlocked-banner .code-big{font-size:2rem;font-weight:800;letter-spacing:0.06em;}
+  .chart{margin-top:18px;}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .bar-label{width:150px;font-size:0.85rem;color:var(--muted);flex-shrink:0;}
+  .bar-track{flex:1;background:#eef2f8;border-radius:6px;overflow:hidden;height:22px;position:relative;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--nhs-mid),var(--nhs-light));
+    display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:#fff;
+    font-size:0.78rem;font-weight:700;transition:width 1s ease;width:0;}
+  .bar-fill.vital{background:linear-gradient(90deg,var(--nhs-amber),#f5b342);}
+  .cum-line{margin-top:6px;font-size:0.78rem;color:var(--muted);width:150px;text-align:right;flex-shrink:0;}
+  .hint{font-size:0.85rem;color:var(--muted);margin-top:8px;}
+  .footer-note{text-align:center;color:var(--muted);font-size:0.82rem;margin-top:30px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="badge">Future Ready Improvement Puzzle</div>
+    <h1>🧩 The Falls Pareto Puzzle</h1>
+    <p>One month of falls-by-location data. Find the "vital few" locations that make up roughly 80% of all falls — and unlock the code.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="step-num">1</span> The Puzzle</h2>
+    <p>Teams are given one month of falls-by-location data and must complete a <strong>Pareto analysis</strong>: calculate each location's share of total falls, order from largest to smallest, and identify which locations make up roughly 80% of all falls (the "vital few").</p>
+    <p>If you are struggling to understand this puzzle, or simply want to learn more about Pareto charts, here are some useful links:</p>
+    <div class="links">
+      <a href="https://coh.gstt.nhs.uk/mod/resource/view.php?id=49554" target="_blank" rel="noopener">📊 CITI Academy: Pareto Chart Example</a>
+      <a href="https://coh.gstt.nhs.uk/mod/resource/view.php?id=49606" target="_blank" rel="noopener">🧰 CITI Academy: Improvement Toolkit</a>
+    </div>
+      </div>
+
+  <div class="card">
+    <h2><span class="step-num">2</span> The Data</h2>
+    <p>Falls recorded by location over one month:</p>
+    <table id="dataTable">
+      <thead>
+        <tr><th>Location</th><th class="num">Falls in the month</th></tr>
+      </thead>
+      <tbody id="dataBody"></tbody>
+      <tfoot>
+        <tr><td>Total</td><td class="num" id="totalFalls">—</td></tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2><span class="step-num">3</span> Work It Out</h2>
+    <p>Order the locations from largest to smallest, then calculate each location's <strong>% share</strong> of total falls and the <strong>running cumulative %</strong>. Fill in your numbers below (round to the nearest whole %), then check your work.</p>
+    <table>
+      <thead>
+        <tr><th>Location</th><th class="num">Falls</th><th class="num">Your % share</th><th class="num">Your cumulative %</th></tr>
+      </thead>
+      <tbody id="workBody"></tbody>
+    </table>
+    <div class="row">
+      <button class="btn secondary" onclick="checkCalculations()">Check my calculations</button>
+      <span class="hint">Tip: % share = (location's falls ÷ 60) × 100</span>
+    </div>
+    <div class="msg" id="calcMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step-num">4</span> Identify the Vital Few</h2>
+    <p>Tick the location(s) whose <strong>cumulative</strong> % first reaches roughly 80% of all falls — these are the "vital few" that improvement effort should focus on.</p>
+    <div id="vitalFewList"></div>
+    <div class="row">
+      <button class="btn secondary" onclick="checkVitalFew()">Check my selection</button>
+    </div>
+    <div class="msg" id="vfMsg"></div>
+  </div>
+
+ 
+
+   <div class="footer-note">GSTT Improvement Community · FOCUS lifecycle · Pareto (80/20) analysis</div>
+</div>
+
+<script>
+const data = [
+  {name:"Bedside (patient's own bed)", falls:32},
+  {name:"Bathroom / toilet", falls:18},
+  {name:"Corridor", falls:6},
+  {name:"Day room", falls:3},
+  {name:"Nurses' station area", falls:1},
+];
+const total = data.reduce((s,d)=>s+d.falls,0);
+
+// build data table
+const dataBody = document.getElementById('dataBody');
+data.forEach(d=>{
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${d.name}</td><td class="num">${d.falls}</td>`;
+  dataBody.appendChild(tr);
+});
+document.getElementById('totalFalls').textContent = total;
+
+// build work table (already in descending order)
+const sorted = [...data].sort((a,b)=>b.falls-a.falls);
+const workBody = document.getElementById('workBody');
+sorted.forEach((d,i)=>{
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${d.name}</td><td class="num">${d.falls}</td>
+    <td class="num"><input type="number" class="calc" id="share_${i}" placeholder="%"></td>
+    <td class="num"><input type="number" class="calc" id="cum_${i}" placeholder="%"></td>`;
+  workBody.appendChild(tr);
+});
+
+function checkCalculations(){
+  let cum = 0;
+  let allOk = true;
+  sorted.forEach((d,i)=>{
+    const share = Math.round((d.falls/total)*100);
+    cum += share;
+    const shareEl = document.getElementById('share_'+i);
+    const cumEl = document.getElementById('cum_'+i);
+    const shareVal = parseFloat(shareEl.value);
+    const cumVal = parseFloat(cumEl.value);
+    const shareGood = !isNaN(shareVal) && Math.abs(shareVal-share) <= 1;
+    const cumGood = !isNaN(cumVal) && Math.abs(cumVal-cum) <= 1;
+    shareEl.classList.toggle('ok', shareGood);
+    shareEl.classList.toggle('bad', !shareGood);
+    cumEl.classList.toggle('ok', cumGood);
+    cumEl.classList.toggle('bad', !cumGood);
+    if(!shareGood || !cumGood) allOk = false;
+  });
+  const msg = document.getElementById('calcMsg');
+  if(allOk){
+    msg.textContent = "✅ Spot on — your percentages and running totals check out.";
+    msg.className = "msg ok";
+  } else {
+    msg.textContent = "Not quite yet — green cells are correct, red cells need another look (±1% tolerance).";
+    msg.className = "msg bad";
+  }
+}
+
+// vital few checkboxes
+const vfList = document.getElementById('vitalFewList');
+sorted.forEach((d,i)=>{
+  const row = document.createElement('div');
+  row.className = 'vf-row';
+  row.innerHTML = `<input type="checkbox" id="vf_${i}"><label for="vf_${i}">${d.name} (${d.falls} falls)</label>`;
+  vfList.appendChild(row);
+});
+
+function checkVitalFew(){
+  // correct answer: Bedside + Bathroom (indices 0,1 in sorted desc order)
+  const selected = sorted.map((d,i)=>document.getElementById('vf_'+i).checked);
+  const correct = selected[0] && selected[1] && !selected.slice(2).some(v=>v);
+  const msg = document.getElementById('vfMsg');
+  if(correct){
+    msg.textContent = "✅ Correct — Bedside and Bathroom/toilet together cover 83% of all falls.";
+    msg.className = "msg ok";
+  } else {
+    msg.textContent = "Have another look at the cumulative % column — which locations get you to ~80% first?";
+    msg.className = "msg bad";
+  }
+}
+
+</script>
+</body>
+</html>
