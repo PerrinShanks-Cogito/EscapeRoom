@@ -1,14 +1,19 @@
 import streamlit as st
 
-st.set_page_config(page_title="Escape Room Challenge", page_icon="🔐")
+st.set_page_config(
+    page_title="Challenge 2: SMART Aim",
+    page_icon="🔐",
+    layout="wide"
+)
 
-st.title("🔐 Escape Room Challenge")
-st.subheader("Mission 2: Identify the SMART Aim")
+st.title("🔐 Challenge 2: The SMART Aim Puzzle")
 
-st.write("""
-Review each draft aim statement and score it against the SMART criteria.
+st.markdown("""
+Nurse Patel has found five draft aim statements.
 
-When you have identified the best SMART aim, select it below.
+Only one is a true SMART aim.
+
+Score each statement from **0 to 5** based on how many SMART criteria it meets.
 """)
 
 options = {
@@ -19,63 +24,91 @@ options = {
     "E": "Increase the number of falls risk assessments completed on admission."
 }
 
-for key, value in options.items():
-    st.markdown(f"**{key}**. {value}")
+expected = {
+    "A": 2,
+    "B": 5,
+    "C": 1,
+    "D": 2,
+    "E": 3
+}
 
-choice = st.radio(
-    "Which statement is the best SMART Aim?",
-    options.keys(),
-    format_func=lambda x: f"{x}: {options[x]}"
-)
+answers = {}
 
-if st.button("Check Answer"):
+st.divider()
 
-    if choice == "B":
+for key, statement in options.items():
 
-        st.success("✅ Correct!")
+    col1, col2 = st.columns([4, 1])
 
-        st.markdown("""
-### Why B is correct
+    with col1:
+        st.write(f"**{key}.** {statement}")
 
-✔ Specific  
-✔ Measurable  
-✔ Achievable  
-✔ Relevant  
-✔ Time-bound
+    with col2:
+        answers[key] = st.selectbox(
+            "Score",
+            [0, 1, 2, 3, 4, 5],
+            key=f"score_{key}",
+            label_visibility="collapsed"
+        )
+
+st.divider()
+
+if st.button("Submit Answers", type="primary"):
+
+    correct = True
+
+    for option, score in answers.items():
+        if score != expected[option]:
+            correct = False
+
+    if correct:
+
+        st.success("✅ Excellent. You have identified the SMARTrkdown("""
+### Why Option B is Correct
+
+✅ Specific  
+✅ Measurable  
+✅ Achievable  
+✅ Relevant  
+✅ Time-bound
+
+The clue is hidden in the statement.
 """)
 
         st.info("""
-To unlock the code:
-
-Find the two numbers in the aim statement.
+Extract the two numbers from the SMART aim:
 
 **30** and **6**
 """)
 
-        st.code("306")
+        st.code("ESCAPE CODE: 306")
 
         st.balloons()
 
     else:
 
-        reasons = {
+        st.error("❌ Not quite. Review the statements and try again.")
+
+        feedback = {
             "A": "No target and no timeframe.",
             "C": "Not measurable and not specific to falls.",
             "D": "Not realistic or achievable.",
-            "E": "This is a process measure rather than an outcome aim."
+            "E": "A process measure rather than an outcome aim."
         }
 
-        st.error("❌ Not quite")
-        st.write(reasons[choice])
+        st.markdown("### Hints")
 
-st.divider()
+        for option in ["A", "C", "D", "E"]:
+            st.write(f"**{option}:** {feedback[option]}")
 
 with st.expander("Need a Hint?"):
     st.write("""
-The best SMART aim should tell you:
+Ask yourself:
 
-- What will improve
-- By how much
-- By when
-- How success will be measured
+• Does the aim specify exactly what will improve?  
+• Is there a numerical target?  
+• Is it realistic?  
+• Does it relate to the problem?  
+• Is there a clear timeframe?
 """)
+``
