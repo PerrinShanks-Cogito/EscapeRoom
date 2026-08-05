@@ -1,7 +1,7 @@
-#streamlit==1.48.1
-#starlette==0.47.2
-#uvicorn==0.35.0
+streamlit==1.48.1
+starlette==0.47.2
+uvicorn==0.35.0
 
-streamlit
-pandas
-numpy
+#streamlit
+#pandas
+#numpy
