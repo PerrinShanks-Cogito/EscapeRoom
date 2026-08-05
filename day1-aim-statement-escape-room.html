@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 1 — The Aim Statement | Future Ready Improvement Team Escape Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board:#152233;
+    --board-2:#1c2e44;
+    --paper:#F1ECDD;
+    --paper-shadow:#d9d1b8;
+    --ink:#20242b;
+    --ink-soft:#54606e;
+    --nhs-blue:#005EB8;
+    --nhs-blue-dark:#003c74;
+    --amber:#c9820a;
+    --fail:#a83b3b;
+    --pass:#2e7d5b;
+    --pass-glow:rgba(46,125,91,0.35);
+    --fail-glow:rgba(168,59,59,0.3);
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, #223350 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 110%, #0e1826 0%, transparent 50%),
+      var(--board);
+    color:var(--paper);
+    font-family:'IBM Plex Mono', monospace;
+    min-height:100vh;
+    padding:32px 16px 80px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001s !important; transition-duration:0.001s !important;}
+  }
+
+  .wrap{max-width:960px; margin:0 auto;}
+
+  /* ---------- Header / clipboard banner ---------- */
+  header{
+    position:relative;
+    text-align:center;
+    padding:28px 20px 24px;
+    margin-bottom:34px;
+    border-bottom:1px solid rgba(241,236,221,0.15);
+  }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:0.28em;
+    color:var(--nhs-blue);
+    text-transform:uppercase;
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:clamp(28px, 5vw, 44px);
+    font-weight:700;
+    margin:0 0 10px;
+    color:var(--paper);
+    letter-spacing:-0.01em;
+  }
+  h1 span{color:var(--nhs-blue); }
+  .subhead{
+    font-family:'Source Serif 4', serif;
+    font-style:italic;
+    color:#b9c2cf;
+    font-size:15px;
+    max-width:560px;
+    margin:0 auto;
+  }
+
+  /* ---------- Briefing / task card ---------- */
+  .briefing{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:var(--radius);
+    padding:22px 24px;
+    margin-bottom:36px;
+    box-shadow:0 14px 30px rgba(0,0,0,0.35);
+    position:relative;
+    border-left:5px solid var(--nhs-blue);
+  }
+  .briefing::before{
+    content:"CASE BRIEFING";
+    position:absolute;
+    top:-11px; left:20px;
+    background:var(--nhs-blue);
+    color:#fff;
+    font-size:10px;
+    letter-spacing:0.16em;
+    font-weight:600;
+    padding:3px 10px;
+    border-radius:2px;
+  }
+  .briefing p{
+    font-family:'Source Serif 4', serif;
+    font-size:15.5px;
+    line-height:1.65;
+    margin:8px 0;
+  }
+  .briefing .task{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:var(--nhs-blue-dark);
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px dashed var(--paper-shadow);
+    line-height:1.6;
+  }
+  .smart-key{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 16px;
+    margin-top:14px;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .smart-key b{color:var(--ink);}
+
+  /* ---------- Case cards grid ---------- */
+  .board-label{
+    font-size:12px;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:#8494a8;
+    margin:0 0 14px 4px;
+  }
+  .cases{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(270px,1fr));
+    gap:18px;
+    margin-bottom:40px;
+  }
+  .case{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:var(--radius);
+    box-shadow:0 10px 22px rgba(0,0,0,0.32);
+    position:relative;
+    overflow:hidden;
+    transform:rotate(var(--tilt,0deg));
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .case:nth-child(1){--tilt:-0.6deg;}
+  .case:nth-child(2){--tilt:0.5deg;}
+  .case:nth-child(3){--tilt:-0.4deg;}
+  .case:nth-child(4){--tilt:0.7deg;}
+  .case:nth-child(5){--tilt:-0.5deg;}
+  .case:hover{transform:rotate(0deg) translateY(-2px); box-shadow:0 16px 28px rgba(0,0,0,0.4);}
+
+  /* clip */
+  .case::before{
+    content:"";
+    position:absolute;
+    top:-9px; left:50%;
+    transform:translateX(-50%);
+    width:46px; height:18px;
+    background:linear-gradient(#c7ccd2,#8a919b);
+    border-radius:4px;
+    box-shadow:0 2px 4px rgba(0,0,0,0.4);
+    z-index:3;
+  }
+
+  .case-head{
+    width:100%;
+    background:none;
+    border:none;
+    text-align:left;
+    padding:22px 18px 14px;
+    cursor:pointer;
+    font-family:inherit;
+    color:inherit;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .case-id{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    color:var(--nhs-blue-dark);
+    letter-spacing:0.05em;
+  }
+  .case-quote{
+    font-family:'Source Serif 4', serif;
+    font-size:15px;
+    line-height:1.5;
+    margin-top:8px;
+    color:var(--ink);
+  }
+  .chevron{
+    flex-shrink:0;
+    width:20px; height:20px;
+    margin-top:2px;
+    transition:transform .25s ease;
+    color:var(--ink-soft);
+  }
+  .case[data-open="true"] .chevron{transform:rotate(180deg);}
+
+  .case-body{
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .35s ease;
+    border-top:1px dashed var(--paper-shadow);
+  }
+  .case[data-open="true"] .case-body{max-height:420px;}
+
+  .smart-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:6px;
+    padding:14px 18px 4px;
+  }
+  .smart-cell{
+    text-align:center;
+    font-size:10.5px;
+    letter-spacing:0.03em;
+  }
+  .smart-cell .letter{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:12px;
+    display:block;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  .mark{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:22px; height:22px;
+    border-radius:50%;
+    font-size:12px;
+    font-weight:700;
+    color:#fff;
+  }
+  .mark.yes{background:var(--pass);}
+  .mark.no{background:var(--fail);}
+
+  .verdict{
+    margin:12px 18px 0;
+    padding:10px 12px;
+    border-radius:2px;
+    font-size:11.5px;
+    letter-spacing:0.04em;
+    font-weight:600;
+    text-align:center;
+  }
+  .verdict.reject{background:rgba(168,59,59,0.12); color:var(--fail); border:1px solid rgba(168,59,59,0.35);}
+  .verdict.confirm{background:rgba(46,125,91,0.12); color:var(--pass); border:1px solid rgba(46,125,91,0.4);}
+
+  .reasoning{
+    font-family:'Source Serif 4', serif;
+    font-style:italic;
+    font-size:13px;
+    color:var(--ink-soft);
+    padding:10px 18px 18px;
+    line-height:1.55;
+  }
+  .reasoning b{color:var(--ink); font-style:normal;}
+
+  /* ---------- Extraction / lock panel ---------- */
+  .lockpanel{
+    background:linear-gradient(180deg, var(--board-2), #0f1a29);
+    border:1px solid rgba(241,236,221,0.12);
+    border-radius:6px;
+    padding:28px 24px 30px;
+    text-align:center;
+    box-shadow:0 20px 40px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.02);
+  }
+  .lockpanel h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:18px;
+    margin:0 0 8px;
+    letter-spacing:0.02em;
+  }
+  .lockpanel p.instr{
+    color:#9fabbb;
+    font-size:13px;
+    max-width:480px;
+    margin:0 auto 20px;
+    line-height:1.6;
+  }
+  .lock-svg{width:56px; height:56px; margin-bottom:14px;}
+  .shackle{transform-origin:28px 22px; transition:transform .5s cubic-bezier(.34,1.56,.64,1);}
+  .lockpanel[data-solved="true"] .shackle{transform:translateY(-6px) rotate(-18deg);}
+  .lockpanel[data-solved="true"] .body-plate{fill:var(--pass);}
+  .lockpanel[data-solved="false"] .body-plate{fill:#3a4a5f;}
+
+  .code-form{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .code-input{
+    background:#0c1420;
+    border:1px solid rgba(241,236,221,0.2);
+    color:var(--paper);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:16px;
+    letter-spacing:0.12em;
+    padding:12px 14px;
+    border-radius:3px;
+    width:220px;
+    text-align:center;
+  }
+  .code-input:focus{outline:2px solid var(--nhs-blue); outline-offset:1px;}
+  .submit-btn{
+    background:var(--nhs-blue);
+    color:#fff;
+    border:none;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:0.04em;
+    padding:12px 20px;
+    border-radius:3px;
+    cursor:pointer;
+    transition:background .2s ease, transform .15s ease;
+  }
+  .submit-btn:hover{background:var(--nhs-blue-dark); transform:translateY(-1px);}
+  .submit-btn:focus-visible, .code-input:focus-visible, .case-head:focus-visible, .hint-btn:focus-visible{
+    outline:2px solid #fff; outline-offset:2px;
+  }
+
+  .feedback{
+    min-height:20px;
+    font-size:12.5px;
+    letter-spacing:0.02em;
+    margin-bottom:6px;
+  }
+  .feedback.err{color:#e08b8b;}
+  .feedback.ok{color:#8fe0b8; font-weight:600;}
+
+  .hint-row{margin-top:14px;}
+  .hint-btn{
+    background:none;
+    border:1px solid rgba(241,236,221,0.25);
+    color:#c3cbd6;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    padding:7px 14px;
+    border-radius:20px;
+    cursor:pointer;
+  }
+  .hint-btn:hover{border-color:var(--nhs-blue);}
+  .hint-text{
+    display:none;
+    font-size:12px;
+    color:var(--amber);
+    margin-top:10px;
+    font-style:italic;
+    font-family:'Source Serif 4', serif;
+  }
+  .hint-text.show{display:block;}
+
+  .success-block{
+    display:none;
+    margin-top:20px;
+    padding-top:18px;
+    border-top:1px dashed rgba(241,236,221,0.2);
+  }
+  .success-block.show{display:block; animation:fadeUp .5s ease;}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+  .success-block .stamp{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:20px;
+    color:var(--pass);
+    letter-spacing:0.03em;
+    margin-bottom:6px;
+  }
+  .success-block p{
+    color:#aeb8c4;
+    font-size:13px;
+    max-width:480px;
+    margin:0 auto;
+    line-height:1.6;
+  }
+
+  footer{
+    text-align:center;
+    color:#57657a;
+    font-size:11px;
+    margin-top:36px;
+    letter-spacing:0.04em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Future Ready Improvement Team Escape Room · Day 1 of 5</div>
+    <h1>The Alarm: Can You Crack Sister Patel's First Code</h1>
+  </header>
+
+  <div class="briefing">
+    <p><b>Background:</b> Sister Patel has left five possible aim statements pinned to the Ward 8 noticeboard. Only one is a true SMART aim and fit for purpose as an improvement objective.</p>
+    <div class="task">
+      <b>Your task:</b> Open each aim statement and check it's score against the five SMART criteria. Four statements each fail on at least one count — read why. The fifth meets all five. Once you've found it, extract the two numbers it contains, in the order they appear, to unlock the day's code.
+    </div>
+    <div class="smart-key">
+      <span><b>S</b> Specific</span><span><b>M</b> Measurable</span><span><b>A</b> Achievable</span><span><b>R</b> Relevant</span><span><b>T</b> Time-bound</span>
+    </div>
+  </div>
+
+  <div class="board-label">Case files — tap to review</div>
+
+  <div class="cases" id="cases">
+
+    <div class="case" data-open="false" data-verdict="reject">
+      <button class="case-head" aria-expanded="false">
+        <div>
+          <div class="case-id">CASE A</div>
+          <div class="case-quote">&ldquo;Reduce falls on Ward 8.&rdquo;</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="case-body">
+        <div class="smart-grid">
+          <div class="smart-cell"><span class="letter">S</span><span class="mark no">✕</span></div>
+          <div class="smart-cell"><span class="letter">M</span><span class="mark no">✕</span></div>
+          <div class="smart-cell"><span class="letter">A</span><span class="mark no">✕</span></div>
+          <div class="smart-cell"><span class="letter">R</span><span class="mark yes">✓</span></div>
+          <div class="smart-cell"><span class="letter">T</span><span class="mark no">✕</span></div>
+        </div>
+        <div class="verdict reject">Does not meet SMART</div>
+        <div class="reasoning">Names the right problem, but sets <b>no target and no timeframe</b> — there's nothing to measure progress against.</div>
+      </div>
+    </div>
+
+    <div class="case" data-open="false" data-verdict="confirm">
+      <button class="case-head" aria-expanded="false">
+        <div>
+          <div class="case-id">CASE B</div>
+          <div class="case-quote">&ldquo;Reduce inpatient falls on Ward 8 by <u>30%</u> within <u>6</u> months, as measured by monthly incident reports.&rdquo;</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="case-body">
+        <div class="smart-grid">
+          <div class="smart-cell"><span class="letter">S</span><span class="mark yes">✓</span></div>
+          <div class="smart-cell"><span class="letter">M</span><span class="mark yes">✓</span></div>
+          <div class="smart-cell"><span class="letter">A</span><span class="mark yes">✓</span></div>
+          <div class="smart-cell"><span class="letter">R</span><span class="mark yes">✓</span></div>
+          <div class="smart-cell"><span class="letter">T</span><span class="mark yes">✓</span></div>
+        </div>
+        <div class="verdict confirm">Candidate confirmed — meets all 5 criteria</div>
+        <div class="reasoning">Names the ward and problem, sets a clear <b>target and deadline</b>, and states how it will be tracked. This is the aim statement to run with.</div>
+      </div>
+    </div>
+
+    <div class="case" data-open="false" data-verdict="reject">
+      <button class="case-head" aria-expanded="false">
+        <div>
+          <div class="case-id">CASE C</div>
+          <div class="case-quote">&ldquo;Improve the overall safety culture of Ward 8.&rdquo;</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="case-body">
+        <div class="smart-grid">
+          <div class="smart-cell"><span class="letter">S</span><span class="mark no">✕</span></div>
+          <div class="smart-cell"><span class="letter">M</span><span class="mark no">✕</span></div>
+          <div class="smart-cell"><span class="letter">A</span><span class="mark yes">✓</span></div>
+          <div class="smart-cell"><span class="letter">R</span><span class="mark no">✕</span></div>
+          <div class="smart-cell"><span class="letter">T</span><span class="mark no">✕</span></div>
+        </div>
+        <div class="verdict reject">Does not meet SMART</div>
+        <div class="reasoning">&ldquo;Safety culture&rdquo; is <b>not measurable and not specific to falls</b> — it's a worthy ambition, not an aim you can track.</div>
+      </div>
+    </div>
+
+    <div class="case" data-open="false" data-verdict="reject">
+      <button class="case-head" aria-expanded="false">
+        <div>
+          <div class="case-id">CASE D</div>
+          <div class="case-quote">&ldquo;Eliminate all patient falls on Ward 8, permanently, starting tomorrow.&rdquo;</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="case-body">
+        <div class="smart-grid">
+          <div class="smart-cell"><span class="letter">S</span><span class="mark yes">✓</span></div>
+          <div class="smart-cell"><span class="letter">M</span><span class="mark yes">✓</span></div>
+          <div class="smart-cell"><span class="letter">A</span><span class="mark no">✕</span></div>
+          <div class="smart-cell"><span class="letter">R</span><span class="mark yes">✓</span></div>
+          <div class="smart-cell"><span class="letter">T</span><span class="mark yes">✓</span></div>
+        </div>
+        <div class="verdict reject">Does not meet SMART</div>
+        <div class="reasoning">Zero falls forever, starting tomorrow, is <b>not achievable or realistic</b> — it sets the team up to fail on day one.</div>
+      </div>
+    </div>
+
+    <div class="case" data-open="false" data-verdict="reject">
+      <button class="case-head" aria-expanded="false">
+        <div>
+          <div class="case-id">CASE E</div>
+          <div class="case-quote">&ldquo;Increase the number of falls risk assessments completed on admission.&rdquo;</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="case-body">
+        <div class="smart-grid">
+          <div class="smart-cell"><span class="letter">S</span><span class="mark yes">✓</span></div>
+          <div class="smart-cell"><span class="letter">M</span><span class="mark yes">✓</span></div>
+          <div class="smart-cell"><span class="letter">A</span><span class="mark yes">✓</span></div>
+          <div class="smart-cell"><span class="letter">R</span><span class="mark no">✕</span></div>
+          <div class="smart-cell"><span class="letter">T</span><span class="mark no">✕</span></div>
+        </div>
+        <div class="verdict reject">Does not meet SMART</div>
+        <div class="reasoning">Well-formed, but it's a <b>process measure, not an outcome aim</b> — it tracks an activity, not the falls problem itself.</div>
+      </div>
+    </div>
+
+  </div>
+
+   <footer>FUTURE READY QUALITY IMPROVEMENT TEAM · ESCAPE ROOM SERIES · CASE REF FALLS-W8-01</footer>
+</div>
+
+<script>
+  // Case file expand/collapse
+  document.querySelectorAll('.case').forEach(function(card){
+    var btn = card.querySelector('.case-head');
+    btn.addEventListener('click', function(){
+      var isOpen = card.getAttribute('data-open') === 'true';
+      card.setAttribute('data-open', String(!isOpen));
+      btn.setAttribute('aria-expanded', String(!isOpen));
+    });
+  });
+
+  // Hint toggle
+  var hintBtn = document.getElementById('hintBtn');
+  var hintText = document.getElementById('hintText');
+  hintBtn.addEventListener('click', function(){
+    hintText.classList.toggle('show');
+  });
+
+  // Code check
+  var CODE = '306'; // 30 then 6, digits only
+  var form = document.getElementById('codeForm');
+  var input = document.getElementById('codeInput');
+  var feedback = document.getElementById('feedback');
+  var lockpanel = document.getElementById('lockpanel');
+  var successBlock = document.getElementById('successBlock');
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var digitsOnly = input.value.replace(/\D/g, '');
+    if(digitsOnly === CODE){
+      feedback.textContent = 'Code accepted.';
+      feedback.className = 'feedback ok';
+      lockpanel.setAttribute('data-solved', 'true');
+      successBlock.classList.add('show');
+      input.disabled = true;
+      form.querySelector('.submit-btn').disabled = true;
+    } else if(digitsOnly.length === 0){
+      feedback.textContent = 'Enter the two numbers from the correct statement.';
+      feedback.className = 'feedback err';
+    } else {
+      feedback.textContent = 'Not quite — re-check which statement meets all five SMART criteria.';
+      feedback.className = 'feedback err';
+    }
+  });
+</script>
+
+</body>
+</html>
