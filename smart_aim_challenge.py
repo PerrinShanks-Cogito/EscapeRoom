@@ -63,7 +63,7 @@ if st.button("Submit Answers", type="primary"):
 
     if correct:
 
-st.success("✅ Excellent. You have identified the SMART aim.")
+    st.success("✅ Excellent. You have identified the SMART aim.")
 
 st.markdown("""
 ### Why Option B is Correct
