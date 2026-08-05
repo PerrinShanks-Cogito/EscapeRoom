@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ward 8 — Test of Change</title>
+<style>
+  :root{
+    --board:#16211f;
+    --board-2:#1d2c29;
+    --paper:#eef0e9;
+    --paper-2:#e2e6da;
+    --ink:#15201c;
+    --ink-soft:#4a564f;
+    --line:#c7cdbd;
+    --teal:#2f6e62;
+    --teal-deep:#1f4d44;
+    --red:#b23a2f;
+    --amber:#c9852c;
+    --mono: 'IBM Plex Mono', 'Courier New', monospace;
+    --sans: 'IBM Plex Sans', Arial, sans-serif;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(255,255,255,0.03), transparent 40%),
+      var(--board);
+    color:var(--paper);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding:28px 16px 60px;
+  }
+
+  .wrap{max-width:920px;margin:0 auto;}
+
+  /* ---- header / case file strip ---- */
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:16px;
+    border-bottom:2px solid var(--teal);
+    padding-bottom:14px;
+    margin-bottom:8px;
+    flex-wrap:wrap;
+  }
+  .kicker{
+    font-family:var(--mono);
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:var(--amber);
+    margin:0 0 6px;
+  }
+  h1{
+    margin:0;
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:clamp(24px,4.2vw,34px);
+    letter-spacing:-0.01em;
+    color:var(--paper);
+  }
+  .file-tag{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--paper-2);
+    opacity:.7;
+    text-align:right;
+    line-height:1.6;
+  }
+
+  .brief{
+    font-size:15px;
+    line-height:1.6;
+    color:var(--paper-2);
+    max-width:62ch;
+    margin:16px 0 26px;
+  }
+  .brief a{color:var(--amber);}
+
+  /* ---- cycle dial (signature element) ---- */
+  .dial-row{
+    display:flex;
+    align-items:center;
+    gap:22px;
+    background:var(--board-2);
+    border:1px solid #2a3934;
+    border-radius:4px;
+    padding:16px 20px;
+    margin-bottom:26px;
+  }
+  .dial{flex:0 0 auto;}
+  .dial-label{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--paper-2);
+    opacity:.75;
+  }
+  .code-readout{
+    font-family:var(--mono);
+    font-size:clamp(22px,4vw,30px);
+    letter-spacing:.35em;
+    color:var(--amber);
+    margin-top:4px;
+  }
+  .code-readout span{
+    display:inline-block;
+    width:1ch;
+  }
+  .code-readout .filled{color:var(--paper);}
+
+  /* ---- slots (the chart) ---- */
+  .stages{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    margin-bottom:30px;
+  }
+  @media (max-width:640px){
+    .stages{grid-template-columns:repeat(2,1fr);}
+  }
+  .stage{
+    background:var(--board-2);
+    border:1.5px dashed #3c4d47;
+    border-radius:6px;
+    min-height:150px;
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .stage.over{border-color:var(--amber); background:#243530;}
+  .stage.filled{border-style:solid; border-color:var(--teal);}
+  .stage-name{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--paper-2);
+    opacity:.8;
+    display:flex;
+    justify-content:space-between;
+  }
+  .stage-num{color:var(--amber);}
+  .stage-slot{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-top:8px;
+  }
+  .stage-hint{
+    font-size:12px;
+    color:var(--paper-2);
+    opacity:.45;
+    text-align:center;
+    padding:0 6px;
+  }
+
+  /* ---- cards ---- */
+  .pool{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    margin-bottom:10px;
+  }
+  @media (max-width:640px){
+    .pool{grid-template-columns:repeat(2,1fr);}
+  }
+  .card{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:5px;
+    padding:12px 12px 14px;
+    cursor:grab;
+    box-shadow:0 3px 0 rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,.25);
+    border:1px solid var(--line);
+    position:relative;
+    user-select:none;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .card:active{cursor:grabbing;}
+  .card.selected{
+    outline:2px solid var(--amber);
+    outline-offset:2px;
+    transform:translateY(-2px);
+  }
+  .card.placed{
+    box-shadow:none;
+    cursor:default;
+  }
+  .card-letter{
+    font-family:var(--mono);
+    font-weight:700;
+    font-size:13px;
+    color:var(--teal-deep);
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:3px;
+    width:24px;height:24px;
+    display:flex;align-items:center;justify-content:center;
+    position:absolute;
+    top:-9px; left:-9px;
+  }
+  .card p{
+    margin:6px 0 0;
+    font-size:13px;
+    line-height:1.42;
+    color:var(--ink-soft);
+  }
+  .card:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+
+  .pool-label{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--paper-2);
+    opacity:.6;
+    margin:0 0 10px;
+  }
+
+  .instructions{
+    font-size:12.5px;
+    color:var(--paper-2);
+    opacity:.65;
+    margin:4px 0 28px;
+  }
+
+  /* ---- result banner ---- */
+  .result{
+    margin-top:22px;
+    padding:18px 20px;
+    border-radius:6px;
+    font-family:var(--mono);
+    display:none;
+  }
+  .result.show{display:block;}
+  .result.ok{
+    background:#1c3a2f;
+    border:1.5px solid var(--teal);
+  }
+  .result.bad{
+    background:#3a2020;
+    border:1.5px solid var(--red);
+  }
+  .result-title{
+    font-size:13px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .result.ok .result-title{color:#7fd8bd;}
+  .result.bad .result-title{color:#e79890;}
+  .result-code{
+    font-size:clamp(26px,5vw,38px);
+    letter-spacing:.4em;
+    color:var(--paper);
+  }
+  .result-sub{
+    font-size:12px;
+    color:var(--paper-2);
+    opacity:.75;
+    margin-top:8px;
+    letter-spacing:normal;
+  }
+
+  .reset-btn{
+    margin-top:16px;
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    background:transparent;
+    color:var(--paper-2);
+    border:1px solid #3c4d47;
+    border-radius:4px;
+    padding:8px 14px;
+    cursor:pointer;
+  }
+  .reset-btn:hover{border-color:var(--amber); color:var(--amber);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <p class="kicker">Ward 8 · Improvement Case File</p>
+      <h1>Sequence the Test of Change</h1>
+    </div>
+    <div class="file-tag">
+      TRIAL: Hourly Intentional Rounding<br>
+      FOCUS: Bedside &amp; Bathroom Hotspots<br>
+      LOGGED: Wednesday
+    </div>
+  </header>
+
+  <p class="brief">
+    Four cards describe one real test of change on Ward 8 — but they're scrambled.
+    Drag each card into its stage of the PDSA cycle. Read out the card letters in
+    Plan → Do → Study → Act order to spell the unlock code.
+    Need a refresher? See the
+    <a href="https://citiacademy.example/improvement-toolkit" target="_blank" rel="noopener">CITI Academy: Improvement Toolkit</a>.
+  </p>
+
+  <div class="dial-row">
+    <svg class="dial" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true">
+      <circle cx="36" cy="36" r="30" fill="none" stroke="#2a3934" stroke-width="8"/>
+      <circle id="dialProgress" cx="36" cy="36" r="30" fill="none" stroke="#c9852c"
+        stroke-width="8" stroke-linecap="round" stroke-dasharray="188.5"
+        stroke-dashoffset="188.5" transform="rotate(-90 36 36)"
+        style="transition:stroke-dashoffset .3s ease;"/>
+      <text x="36" y="41" text-anchor="middle" font-family="IBM Plex Mono, monospace"
+        font-size="13" fill="#eef0e9" id="dialText">0/4</text>
+    </svg>
+    <div>
+      <div class="dial-label">Unlock code</div>
+      <div class="code-readout" id="codeReadout">
+        <span id="c0">_</span><span id="c1">_</span><span id="c2">_</span><span id="c3">_</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stages" id="stages">
+    <div class="stage" data-stage="0" data-name="PLAN">
+      <div class="stage-name"><span>Plan</span><span class="stage-num">1</span></div>
+      <div class="stage-slot"><span class="stage-hint">Drop card here</span></div>
+    </div>
+    <div class="stage" data-stage="1" data-name="DO">
+      <div class="stage-name"><span>Do</span><span class="stage-num">2</span></div>
+      <div class="stage-slot"><span class="stage-hint">Drop card here</span></div>
+    </div>
+    <div class="stage" data-stage="2" data-name="STUDY">
+      <div class="stage-name"><span>Study</span><span class="stage-num">3</span></div>
+      <div class="stage-slot"><span class="stage-hint">Drop card here</span></div>
+    </div>
+    <div class="stage" data-stage="3" data-name="ACT">
+      <div class="stage-name"><span>Act</span><span class="stage-num">4</span></div>
+      <div class="stage-slot"><span class="stage-hint">Drop card here</span></div>
+    </div>
+  </div>
+
+  <p class="pool-label">Scrambled cards</p>
+  <div class="pool" id="pool"></div>
+  <p class="instructions">Tip: drag a card onto a stage, or tap a card then tap a stage to place it. Tap a placed card to send it back.</p>
+
+  <div class="result" id="result">
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-code" id="resultCode"></div>
+    <div class="result-sub" id="resultSub"></div>
+  </div>
+
+  <button class="reset-btn" id="resetBtn">Reset cards</button>
+
+</div>
+
+<script>
+(function(){
+  const CARDS = [
+    { letter:'W', text:"The team compares falls and staff feedback from the trial week against the previous four weeks' average, to see whether hourly rounding actually made a difference.", stage:2 },
+    { letter:'X', text:"The Nurse in Charge plans to trial hourly intentional rounding on Bay 3 for one week, focused on bedside and bathroom checks, and agrees in advance what data will be collected.", stage:0 },
+    { letter:'Y', text:"Based on what was found, the team decides whether to extend hourly rounding to the whole ward, adjust it first, or stop it.", stage:3 },
+    { letter:'Z', text:"Hourly rounding is trialled on Bay 3 for one week exactly as planned, with any problems staff encounter noted down as they happen.", stage:1 }
+  ];
+  const SCRAMBLE_ORDER = ['W','X','Y','Z']; // display order in pool
+
+  const pool = document.getElementById('pool');
+  const stages = document.querySelectorAll('.stage');
+  const resetBtn = document.getElementById('resetBtn');
+  const result = document.getElementById('result');
+  const resultTitle = document.getElementById('resultTitle');
+  const resultCode = document.getElementById('resultCode');
+  const resultSub = document.getElementById('resultSub');
+  const dialProgress = document.getElementById('dialProgress');
+  const dialText = document.getElementById('dialText');
+  const codeSpans = [0,1,2,3].map(i => document.getElementById('c'+i));
+
+  let selectedCard = null; // for tap-to-place
+  const placement = {0:null,1:null,2:null,3:null}; // stageIndex -> letter
+
+  function buildCard(letter, text){
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.draggable = true;
+    el.dataset.letter = letter;
+    el.tabIndex = 0;
+    el.setAttribute('role','button');
+    el.setAttribute('aria-label', 'Card ' + letter + ': ' + text);
+    el.innerHTML = '<span class="card-letter">' + letter + '</span><p>' + text + '</p>';
+
+    el.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', letter);
+      el.classList.add('selected');
+    });
+    el.addEventListener('dragend', () => el.classList.remove('selected'));
+
+    el.addEventListener('click', () => {
+      if (el.classList.contains('placed')){
+        returnCardToPool(letter);
+        return;
+      }
+      if (selectedCard === letter){
+        el.classList.remove('selected');
+        selectedCard = null;
+        return;
+      }
+      document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedCard = letter;
+    });
+
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        el.click();
+      }
+    });
+
+    return el;
+  }
+
+  function renderPool(){
+    pool.innerHTML = '';
+    SCRAMBLE_ORDER.forEach(letter => {
+      if (Object.values(placement).includes(letter)) return;
+      const c = CARDS.find(c => c.letter === letter);
+      pool.appendChild(buildCard(letter, c.text));
+    });
+  }
+
+  function returnCardToPool(letter){
+    for (const k in placement){
+      if (placement[k] === letter) placement[k] = null;
+    }
+    selectedCard = null;
+    renderPool();
+    renderStages();
+    updateCode();
+    hideResult();
+  }
+
+  function renderStages(){
+    stages.forEach(stage => {
+      const idx = stage.dataset.stage;
+      const slot = stage.querySelector('.stage-slot');
+      const letter = placement[idx];
+      slot.innerHTML = '';
+      if (letter){
+        const c = CARDS.find(c => c.letter === letter);
+        const card = buildCard(letter, c.text);
+        card.classList.add('placed');
+        card.draggable = true;
+        slot.appendChild(card);
+        stage.classList.add('filled');
+      } else {
+        const hint = document.createElement('span');
+        hint.className = 'stage-hint';
+        hint.textContent = 'Drop card here';
+        slot.appendChild(hint);
+        stage.classList.remove('filled');
+      }
+    });
+  }
+
+  function placeCard(letter, stageIdx){
+    // clear this letter from any other stage
+    for (const k in placement){
+      if (placement[k] === letter) placement[k] = null;
+    }
+    // if target stage occupied, bump that card back to pool
+    placement[stageIdx] = letter;
+    selectedCard = null;
+    renderPool();
+    renderStages();
+    updateCode();
+    hideResult();
+  }
+
+  stages.forEach(stage => {
+    const idx = stage.dataset.stage;
+
+    stage.addEventListener('dragover', e => { e.preventDefault(); stage.classList.add('over'); });
+    stage.addEventListener('dragleave', () => stage.classList.remove('over'));
+    stage.addEventListener('drop', e => {
+      e.preventDefault();
+      stage.classList.remove('over');
+      const letter = e.dataTransfer.getData('text/plain');
+      if (letter) placeCard(letter, idx);
+    });
+
+    stage.addEventListener('click', () => {
+      if (selectedCard){
+        placeCard(selectedCard, idx);
+      }
+    });
+  });
+
+  function updateCode(){
+    const order = [0,1,2,3].map(i => placement[i] || '_');
+    codeSpans.forEach((span,i) => {
+      span.textContent = order[i];
+      span.classList.toggle('filled', order[i] !== '_');
+    });
+    const filledCount = order.filter(x => x !== '_').length;
+    dialText.textContent = filledCount + '/4';
+    const circumference = 188.5;
+    dialProgress.style.strokeDashoffset = circumference - (circumference * filledCount / 4);
+
+    if (filledCount === 4) checkAnswer(order.join(''));
+  }
+
+  function checkAnswer(code){
+    const correct = 'XZWY';
+    result.classList.add('show');
+    if (code === correct){
+      result.classList.remove('bad');
+      result.classList.add('ok');
+      resultTitle.textContent = 'Cycle complete — sequence confirmed';
+      resultCode.textContent = code;
+      resultSub.textContent = 'Plan → Do → Study → Act. Enter this code to unlock the next clue.';
+    } else {
+      result.classList.remove('ok');
+      result.classList.add('bad');
+      resultTitle.textContent = 'Not quite the right cycle';
+      resultCode.textContent = code;
+      resultSub.textContent = 'Check which card sets up the trial, which one runs it, which one reviews it, and which one decides what happens next.';
+    }
+  }
+
+  function hideResult(){
+    result.classList.remove('show','ok','bad');
+  }
+
+  resetBtn.addEventListener('click', () => {
+    for (const k in placement) placement[k] = null;
+    selectedCard = null;
+    renderPool();
+    renderStages();
+    updateCode();
+    hideResult();
+  });
+
+  renderPool();
+  renderStages();
+  updateCode();
+})();
+</script>
+</body>
+</html>
