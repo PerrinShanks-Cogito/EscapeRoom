@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 2 · The Night Shift File</title>
+<style>
+  :root{
+    --ink:#0B1626;
+    --ink-2:#101F35;
+    --board:#16273F;
+    --line:#3A5170;
+    --paper:#F1E7D2;
+    --paper-shadow:#c9bb9d;
+    --accent:#3FA5B8;
+    --accent-2:#E4A939;
+    --danger:#D96C5F;
+    --success:#5FB08A;
+    --text-light:#EAE3D4;
+    --text-muted:#93A4BC;
+    --mono: 'Courier New', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at top left, rgba(63,165,184,0.08), transparent 55%),
+      var(--ink);
+    color:var(--text-light);
+    font-family:var(--sans);
+    padding:32px 20px 80px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  /* header */
+  .eyebrow{
+    font-family:var(--mono);
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:var(--accent);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .eyebrow::before{content:"";width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent);}
+  h1{
+    font-family:var(--mono);
+    font-size:clamp(28px,4vw,42px);
+    margin:0 0 6px;
+    letter-spacing:.01em;
+    text-transform:uppercase;
+    border-bottom:2px dashed var(--line);
+    padding-bottom:14px;
+  }
+  .subhead{color:var(--text-muted);font-size:15px;max-width:680px;line-height:1.55;margin:14px 0 0;}
+  .stamp{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--danger);
+    border:1.5px solid var(--danger);
+    padding:3px 8px;
+    border-radius:3px;
+    transform:rotate(-4deg);
+    display:inline-block;
+    letter-spacing:.08em;
+  }
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:1fr;gap:26px;margin-top:30px;}
+
+  /* card tray of unsorted factors */
+  .tray{
+    background:var(--board);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px;
+  }
+  .tray h2, .board-panel h2{
+    font-family:var(--mono);
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    color:var(--text-muted);
+    margin:0 0 14px;
+  }
+  #cardPool{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    min-height:64px;
+  }
+  .card{
+    background:var(--paper);
+    color:#241C10;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.4;
+    padding:12px 14px;
+    width:210px;
+    border-radius:2px;
+    box-shadow:2px 3px 0 var(--paper-shadow), 0 6px 14px rgba(0,0,0,.35);
+    cursor:grab;
+    position:relative;
+    user-select:none;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .card:active{cursor:grabbing;}
+  .card::before{
+    content:attr(data-n);
+    position:absolute;
+    top:-9px;left:-9px;
+    width:22px;height:22px;
+    background:var(--ink);
+    color:var(--accent-2);
+    border:1px solid var(--accent-2);
+    border-radius:50%;
+    font-size:11px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .card.selected{outline:2px solid var(--accent-2);transform:translateY(-2px);}
+  .card.correct{outline:2px solid var(--success);}
+  .card.incorrect{outline:2px solid var(--danger);}
+  .card.dragging{opacity:.4;}
+
+  /* fishbone board */
+  .board-panel{
+    background:var(--board);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px 20px 26px;
+  }
+  .fishbone-svg-wrap{width:100%;overflow-x:auto;}
+  svg#fishbone{width:100%;min-width:760px;height:auto;display:block;}
+
+  .zone{
+    fill:rgba(255,255,255,0.02);
+    stroke:var(--line);
+    stroke-width:1.5;
+    stroke-dasharray:5 4;
+    rx:8;
+    transition:fill .15s ease, stroke .15s ease;
+  }
+  .zone.dragover{fill:rgba(63,165,184,0.14);stroke:var(--accent);}
+  .zone-label{
+    font-family:var(--mono);
+    font-size:15px;
+    font-weight:bold;
+    fill:var(--text-light);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+  }
+  .bone-line{stroke:var(--line);stroke-width:2.5;}
+  .spine{stroke:var(--text-muted);stroke-width:3;}
+  .head-box{fill:var(--ink-2);stroke:var(--accent-2);stroke-width:2;rx:8;}
+  .head-text{font-family:var(--mono);color:var(--accent-2);font-size:13px;font-weight:bold;text-transform:uppercase;text-align:center;}
+
+  foreignObject .zonefo{
+    width:100%;height:100%;
+  }
+  .zone-body{
+    width:100%;height:100%;
+    display:flex;flex-direction:column;gap:6px;
+    padding:34px 8px 8px;
+    overflow-y:auto;
+  }
+  .zone-body .card{width:100%;font-size:11.5px;padding:8px 10px;}
+  .zone-body .card::before{width:18px;height:18px;font-size:10px;top:-7px;left:-7px;}
+
+  /* controls */
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:center;
+    margin-top:22px;
+  }
+  button{
+    font-family:var(--mono);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font-size:12.5px;
+    padding:11px 20px;
+    border-radius:5px;
+    border:1px solid var(--accent);
+    background:transparent;
+    color:var(--accent);
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  button:hover{background:var(--accent);color:var(--ink);}
+  button.ghost{border-color:var(--line);color:var(--text-muted);}
+  button.ghost:hover{background:var(--line);color:var(--text-light);}
+  .feedback{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--text-muted);
+    min-height:20px;
+  }
+  .feedback.bad{color:var(--danger);}
+  .feedback.good{color:var(--success);}
+
+  /* unlock panel */
+  .unlock{
+    margin-top:26px;
+    background:var(--ink-2);
+    border:1px solid var(--accent-2);
+    border-radius:10px;
+    padding:22px 24px;
+    display:none;
+    align-items:center;
+    gap:20px;
+  }
+  .unlock.show{display:flex;}
+  .padlock{font-size:34px;filter:drop-shadow(0 0 6px rgba(228,169,57,.5));}
+  .unlock-text{font-size:13.5px;color:var(--text-muted);line-height:1.5;}
+  .code{
+    font-family:var(--mono);
+    font-size:30px;
+    letter-spacing:.15em;
+    color:var(--accent-2);
+    border:2px solid var(--accent-2);
+    padding:6px 16px;
+    border-radius:6px;
+  }
+
+  /* help / resources */
+  details{
+    margin-top:26px;
+    background:var(--board);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 20px;
+  }
+  summary{
+    cursor:pointer;
+    font-family:var(--mono);
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+    color:var(--accent);
+  }
+  .help-body{margin-top:16px;font-size:14px;line-height:1.6;color:var(--text-light);}
+  .help-body a{color:var(--accent-2);text-decoration:none;border-bottom:1px dotted var(--accent-2);}
+  .help-body a:hover{border-bottom-style:solid;}
+  .video-slot{
+    margin-top:14px;
+    border:2px dashed var(--line);
+    border-radius:8px;
+    padding:26px;
+    text-align:center;
+    color:var(--text-muted);
+    font-family:var(--mono);
+    font-size:12.5px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+  @media (max-width:640px){
+    .card{width:100%;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Day 2 · Case File 02</div>
+  <h1>The Night Shift File</h1>
+  <p class="subhead">
+    Eight factors, reported anonymously by ward staff, sit in the tray below. Sort each one
+    onto the correct bone of the fishbone diagram — <strong>People, Process, Equipment</strong> or
+    <strong>Environment</strong> — to see what's really driving the rise in falls.
+    <span class="stamp">Confidential — Ward Review</span>
+  </p>
+
+  <div class="grid">
+
+    <div class="tray">
+      <h2>Unsorted reports</h2>
+      <div id="cardPool"></div>
+    </div>
+
+    <div class="board-panel">
+      <h2>Fishbone diagram — drag each report onto a bone</h2>
+      <div class="fishbone-svg-wrap">
+        <svg id="fishbone" viewBox="0 0 1080 620" xmlns="http://www.w3.org/2000/svg">
+          <!-- spine -->
+          <line class="spine" x1="70" y1="310" x2="760" y2="310"></line>
+          <polygon points="760,300 780,310 760,320" fill="var(--text-muted)"></polygon>
+
+          <!-- head -->
+          <rect class="head-box" x="790" y="255" width="220" height="110"></rect>
+          <foreignObject x="800" y="255" width="200" height="110">
+            <div xmlns="http://www.w3.org/1999/xhtml" style="height:110px;display:flex;align-items:center;justify-content:center;text-align:center;">
+              <span class="head-text">Rise in&nbsp;Ward&nbsp;Falls</span>
+            </div>
+          </foreignObject>
+
+          <!-- People (top-left) -->
+          <line class="bone-line" x1="230" y1="310" x2="120" y2="120"></line>
+          <text class="zone-label" x="60" y="95">People</text>
+          <rect class="zone" data-category="People" x="20" y="105" width="220" height="150"></rect>
+          <foreignObject x="20" y="105" width="220" height="150">
+            <div xmlns="http://www.w3.org/1999/xhtml" class="zone-body" data-zonebody="People"></div>
+          </foreignObject>
+
+          <!-- Process (top-right) -->
+          <line class="bone-line" x1="520" y1="310" x2="620" y2="120"></line>
+          <text class="zone-label" x="540" y="95">Process</text>
+          <rect class="zone" data-category="Process" x="500" y="105" width="220" height="150"></rect>
+          <foreignObject x="500" y="105" width="220" height="150">
+            <div xmlns="http://www.w3.org/1999/xhtml" class="zone-body" data-zonebody="Process"></div>
+          </foreignObject>
+
+          <!-- Equipment (bottom-left) -->
+          <line class="bone-line" x1="230" y1="310" x2="120" y2="500"></line>
+          <text class="zone-label" x="40" y="530">Equipment</text>
+          <rect class="zone" data-category="Equipment" x="20" y="365" width="220" height="150"></rect>
+          <foreignObject x="20" y="365" width="220" height="150">
+            <div xmlns="http://www.w3.org/1999/xhtml" class="zone-body" data-zonebody="Equipment"></div>
+          </foreignObject>
+
+          <!-- Environment (bottom-right) -->
+          <line class="bone-line" x1="520" y1="310" x2="620" y2="500"></line>
+          <text class="zone-label" x="530" y="530">Environment</text>
+          <rect class="zone" data-category="Environment" x="500" y="365" width="220" height="150"></rect>
+          <foreignObject x="500" y="365" width="220" height="150">
+            <div xmlns="http://www.w3.org/1999/xhtml" class="zone-body" data-zonebody="Environment"></div>
+          </foreignObject>
+        </svg>
+      </div>
+
+      <div class="controls">
+        <button id="checkBtn">Check our sort</button>
+        <button id="resetBtn" class="ghost">Reset board</button>
+        <span class="feedback" id="feedback"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="unlock" id="unlockPanel">
+    <div class="padlock">🔓</div>
+    <div>
+      <div class="unlock-text">
+        All four bones are correctly filled. Multiply the largest number of reports on any one
+        bone by the number of bones you actually used:
+      </div>
+      <div style="margin-top:8px;" id="unlockWorking"></div>
+    </div>
+    <div class="code" id="unlockCode">— — —</div>
+  </div>
+
+  <details>
+    <summary>Struggling? Need the toolkit, or want to learn more</summary>
+    <div class="help-body">
+      <p>If you're struggling with this challenge, or simply want to learn more about fishbone diagrams, here are some useful links:</p>
+      <ul>
+        <li><a href="https://coh.gstt.nhs.uk/mod/resource/view.php?id=49553" target="_blank" rel="noopener">CITI Academy: Fishbone Diagram Template</a></li>
+        <li><a href="https://coh.gstt.nhs.uk/mod/resource/view.php?id=49606" target="_blank" rel="noopener">CITI Academy: Improvement Toolkit</a></li>
+      </ul>
+      <p>Here's how fishbone diagrams have been used by people in the Trust to aid their improvement work:</p>
+      <div class="video-slot">
+        [ VIDEO PLACEHOLDER — replace this block with an &lt;iframe&gt; or &lt;video&gt; embed of a CITI Academy interview / case study ]
+      </div>
+    </div>
+  </details>
+
+</div>
+
+<script>
+(function(){
+  // --- data -----------------------------------------------------------
+  const factors = [
+    { n: 1, text: "Two new starters on nights haven't yet completed falls-risk training.", category: "People" },
+    { n: 2, text: "Bed alarms are not consistently switched on after repositioning patients.", category: "Equipment" },
+    { n: 3, text: "Falls risk assessments are sometimes not completed within 4 hours of admission.", category: "Process" },
+    { n: 4, text: "Lighting in the bathrooms is poor overnight.", category: "Environment" },
+    { n: 5, text: "Handover doesn't always flag which patients are high falls-risk.", category: "Process" },
+    { n: 6, text: "Non-slip socks aren't available in every patient's size.", category: "Equipment" },
+    { n: 7, text: "Night shift has been running one nurse short for six weeks.", category: "People" },
+    { n: 8, text: "Call bells in two bays are out of easy reach from the bed.", category: "Environment" },
+  ];
+
+  const pool = document.getElementById('cardPool');
+  const feedback = document.getElementById('feedback');
+  const unlockPanel = document.getElementById('unlockPanel');
+  const unlockCode = document.getElementById('unlockCode');
+  const unlockWorking = document.getElementById('unlockWorking');
+  let selectedCard = null; // for tap-to-place fallback
+
+  function buildCard(f){
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.draggable = true;
+    el.dataset.n = f.n;
+    el.dataset.category = f.category;
+    el.setAttribute('data-n', f.n);
+    el.textContent = f.text;
+    el.tabIndex = 0;
+    el.setAttribute('role','button');
+    el.setAttribute('aria-label', 'Report ' + f.n + ': ' + f.text);
+
+    el.addEventListener('dragstart', e => {
+      el.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', f.n);
+    });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+
+    // tap-to-select fallback for touch devices
+    el.addEventListener('click', () => {
+      if (selectedCard === el) {
+        el.classList.remove('selected');
+        selectedCard = null;
+      } else {
+        if (selectedCard) selectedCard.classList.remove('selected');
+        selectedCard = el;
+        el.classList.add('selected');
+      }
+    });
+
+    return el;
+  }
+
+  function renderPool(){
+    factors.forEach(f => pool.appendChild(buildCard(f)));
+  }
+  renderPool();
+
+  // --- drop zones -------------------------------------------------------
+  const zoneBodies = document.querySelectorAll('[data-zonebody]');
+  const zoneRects = document.querySelectorAll('rect.zone');
+
+  function zoneRectFor(name){
+    return document.querySelector('rect.zone[data-category="' + name + '"]');
+  }
+
+  function placeInZone(cardEl, zoneName){
+    const body = document.querySelector('[data-zonebody="' + zoneName + '"]');
+    body.appendChild(cardEl);
+    cardEl.classList.remove('selected','correct','incorrect');
+    feedback.textContent = '';
+    feedback.className = 'feedback';
+    unlockPanel.classList.remove('show');
+  }
+
+  zoneBodies.forEach(body => {
+    const zoneName = body.dataset.zonebody;
+    const rectEl = zoneRectFor(zoneName);
+
+    body.addEventListener('dragover', e => {
+      e.preventDefault();
+      rectEl.classList.add('dragover');
+    });
+    body.addEventListener('dragleave', () => rectEl.classList.remove('dragover'));
+    body.addEventListener('drop', e => {
+      e.preventDefault();
+      rectEl.classList.remove('dragover');
+      const n = e.dataTransfer.getData('text/plain');
+      const cardEl = document.querySelector('.card[data-n="' + n + '"]');
+      if (cardEl) placeInZone(cardEl, zoneName);
+    });
+
+    // tap-to-place: clicking a zone drops the currently selected card
+    body.addEventListener('click', () => {
+      if (selectedCard) {
+        placeInZone(selectedCard, zoneName);
+        selectedCard = null;
+      }
+    });
+  });
+
+  // also allow dropping back into the pool
+  pool.addEventListener('dragover', e => e.preventDefault());
+  pool.addEventListener('drop', e => {
+    e.preventDefault();
+    const n = e.dataTransfer.getData('text/plain');
+    const cardEl = document.querySelector('.card[data-n="' + n + '"]');
+    if (cardEl) {
+      pool.appendChild(cardEl);
+      cardEl.classList.remove('selected','correct','incorrect');
+    }
+  });
+  pool.addEventListener('click', (e) => {
+    if (e.target === pool && selectedCard) {
+      pool.appendChild(selectedCard);
+      selectedCard.classList.remove('selected');
+      selectedCard = null;
+    }
+  });
+
+  // --- check / unlock -----------------------------------------------------
+  document.getElementById('checkBtn').addEventListener('click', () => {
+    const allCards = document.querySelectorAll('.card');
+    let placedCount = 0, correctCount = 0, wrongCount = 0;
+
+    allCards.forEach(c => {
+      const parentZone = c.closest('[data-zonebody]');
+      c.classList.remove('correct','incorrect');
+      if (!parentZone) return; // still in the tray
+      placedCount++;
+      const guessed = parentZone.dataset.zonebody;
+      if (guessed === c.dataset.category) {
+        c.classList.add('correct');
+        correctCount++;
+      } else {
+        c.classList.add('incorrect');
+        wrongCount++;
+      }
+    });
+
+    if (placedCount < allCards.length) {
+      feedback.textContent = `Place all ${allCards.length} reports on the diagram before checking. (${allCards.length - placedCount} still in the tray.)`;
+      feedback.className = 'feedback bad';
+      unlockPanel.classList.remove('show');
+      return;
+    }
+
+    if (wrongCount > 0) {
+      feedback.textContent = `${correctCount} of ${allCards.length} on the right bone. ${wrongCount} need another look — check the ones marked in red.`;
+      feedback.className = 'feedback bad';
+      unlockPanel.classList.remove('show');
+      return;
+    }
+
+    feedback.textContent = `All ${allCards.length} reports correctly sorted.`;
+    feedback.className = 'feedback good';
+    revealUnlock();
+  });
+
+  function revealUnlock(){
+    // tally counts per category from the answer key (robust if factors are edited later)
+    const counts = {};
+    factors.forEach(f => { counts[f.category] = (counts[f.category] || 0) + 1; });
+    const usedCategories = Object.keys(counts);
+    const maxCount = Math.max(...Object.values(counts));
+    const code = maxCount * usedCategories.length;
+
+    const breakdown = usedCategories.map(c => `${c} = ${counts[c]}`).join('   ·   ');
+    unlockWorking.innerHTML =
+      `<span style="font-family:var(--mono);font-size:12.5px;color:var(--text-muted);">${breakdown}</span><br>` +
+      `<span style="font-family:var(--mono);font-size:13px;">${maxCount} × ${usedCategories.length} categories =</span>`;
+    unlockCode.textContent = code;
+    unlockPanel.classList.add('show');
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    document.querySelectorAll('.card').forEach(c => {
+      c.classList.remove('correct','incorrect','selected');
+      pool.appendChild(c);
+    });
+    selectedCard = null;
+    feedback.textContent = '';
+    feedback.className = 'feedback';
+    unlockPanel.classList.remove('show');
+  });
+})();
+</script>
+</body>
+</html>
