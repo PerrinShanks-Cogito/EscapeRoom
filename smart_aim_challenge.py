@@ -58,8 +58,8 @@ if st.button("Submit Answers", type="primary"):
     correct = True
 
     for option, score in answers.items():
-        if score != expected[option]:
-        e
+            if score != expected[option]:
+            e
 
     if correct:
 
