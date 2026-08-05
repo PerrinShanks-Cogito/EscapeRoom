@@ -57,14 +57,15 @@ if st.button("Submit Answers", type="primary"):
 
     correct = True
 
-for option, score in answers.items():
-    if score != expected[option]:
-        correct = False
+    for option, score in answers.items():
+        if score != expected[option]:
+    e
 
-if correct:
-    stent. You have identified the SMART aim.")
+    if correct:
 
-    st.markdown("""
+        st.success("✅ Excellent. You have identified the SMART aim.")
+
+        st.markdown("""
 ### Why Option B is Correct
 
 ✅ **Specific**  
@@ -73,10 +74,6 @@ if correct:
 ✅ **Relevant**  
 ✅ **Time-bound**
 
-The clue is hidden in the statement.
-""")
-else:
-    st.error("❌ Not quite. Try again.")
 The clue is hidden in the statement.
 """)
 
@@ -116,4 +113,3 @@ Ask yourself:
 • Does it relate to the problem?  
 • Is there a clear timeframe?
 """)
-``
