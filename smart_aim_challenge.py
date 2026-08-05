@@ -63,14 +63,16 @@ if st.button("Submit Answers", type="primary"):
 
     if correct:
 
-        st.success("✅ Excellent. You have identified the SMARTrkdown("""
+st.success("✅ Excellent. You have identified the SMART aim.")
+
+st.markdown("""
 ### Why Option B is Correct
 
-✅ Specific  
-✅ Measurable  
-✅ Achievable  
-✅ Relevant  
-✅ Time-bound
+✅ **Specific**  
+✅ **Measurable**  
+✅ **Achievable**  
+✅ **Relevant**  
+✅ **Time-bound**
 
 The clue is hidden in the statement.
 """)
