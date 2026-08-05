@@ -61,7 +61,7 @@ if st.button("Submit Answers", type="primary"):
         if score != expected[option]:
             correct = False
 
-        if correct:
+            if correct:
 
     st.success("✅ Excellent. You have identified the SMART aim.")
 
